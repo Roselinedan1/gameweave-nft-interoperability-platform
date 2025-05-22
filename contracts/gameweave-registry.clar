@@ -271,40 +271,6 @@
   )
 )
 
-;; Update game details
-(define-public (update-game 
-  (game-id (string-ascii 50)) 
-  (name (string-ascii 100)) 
-  (website-url (optional (string-ascii 255))) 
-  (description (string-utf8 500))
-  (active bool))
-  (begin
-    ;; Check authorization
-    (asserts! (is-authorized-for-game game-id) ERR-NOT-AUTHORIZED)
-    
-    ;; Check if game exists
-    (asserts! (is-some (map-get? games { game-id: game-id })) ERR-GAME-NOT-FOUND)
-    
-    ;; Update the game
-    (match (map-get? games { game-id: game-id })
-      game-data 
-        (map-set games 
-          { game-id: game-id }
-          {
-            name: name,
-            developer: (get developer game-data),
-            website-url: website-url,
-            description: description,
-            registered-at: (get registered-at game-data),
-            active: active
-          }
-        )
-      ERR-GAME-NOT-FOUND
-    )
-    
-    (ok true)
-  )
-)
 
 ;; Register a new NFT
 (define-public (register-nft 
@@ -338,45 +304,6 @@
         royalty-percentage: royalty-percentage,
         active: true
       }
-    )
-    
-    (ok true)
-  )
-)
-
-;; Update NFT details
-(define-public (update-nft
-  (nft-id (string-ascii 50))
-  (name (string-ascii 100))
-  (metadata-url (string-ascii 255))
-  (royalty-percentage uint)
-  (active bool))
-  (begin
-    ;; Check if the NFT exists
-    (asserts! (is-some (map-get? nfts { nft-id: nft-id })) ERR-NFT-NOT-FOUND)
-    
-    ;; Check if the caller is authorized
-    (asserts! (is-authorized-for-nft nft-id) ERR-NOT-AUTHORIZED)
-    
-    ;; Check royalty percentage (max 30%)
-    (asserts! (<= royalty-percentage u3000) ERR-INVALID-ROYALTY-PERCENTAGE)
-    
-    ;; Update the NFT
-    (match (map-get? nfts { nft-id: nft-id })
-      nft-data
-        (map-set nfts
-          { nft-id: nft-id }
-          {
-            name: name,
-            origin-game-id: (get origin-game-id nft-data),
-            creator: (get creator nft-data),
-            creation-block: (get creation-block nft-data),
-            metadata-url: metadata-url,
-            royalty-percentage: royalty-percentage,
-            active: active
-          }
-        )
-      ERR-NFT-NOT-FOUND
     )
     
     (ok true)
@@ -540,54 +467,6 @@
         )
       ERR-NFT-NOT-FOUND
     )
-  )
-)
-
-;; Update conversion rule
-(define-public (update-conversion-rule
-  (nft-id (string-ascii 50))
-  (source-game-id (string-ascii 50))
-  (target-game-id (string-ascii 50))
-  (display-name (string-ascii 100))
-  (asset-url (string-ascii 255))
-  (properties (string-utf8 1000)))
-  (begin
-    ;; Check if the conversion rule exists
-    (asserts! (is-some (map-get? conversion-rules { 
-      nft-id: nft-id, 
-      source-game-id: source-game-id, 
-      target-game-id: target-game-id 
-    })) ERR-CONVERSION-RULE-NOT-FOUND)
-    
-    ;; Check if the caller is authorized (either NFT creator or target game developer)
-    (asserts! (or 
-      (is-nft-creator nft-id) 
-      (is-game-developer target-game-id)
-      (is-contract-owner)
-    ) ERR-NOT-AUTHORIZED)
-    
-    ;; Update the conversion rule
-    (match (map-get? conversion-rules { 
-      nft-id: nft-id, 
-      source-game-id: source-game-id, 
-      target-game-id: target-game-id 
-    })
-      rule-data
-        (map-set conversion-rules
-          { nft-id: nft-id, source-game-id: source-game-id, target-game-id: target-game-id }
-          {
-            display-name: display-name,
-            asset-url: asset-url,
-            properties: properties,
-            created-by: (get created-by rule-data),
-            created-at: (get created-at rule-data),
-            last-updated-at: block-height
-          }
-        )
-      ERR-CONVERSION-RULE-NOT-FOUND
-    )
-    
-    (ok true)
   )
 )
 
